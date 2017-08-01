@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.1.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.1.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.1.xsd">
+
+	<!-- 加载配置文件 -->
+	<context:property-placeholder location="classpath:com/wang/config/jdbc.properties"/>
+
+	<!-- 数据库连接池 -->
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="driverClassName" value="${jdbc.mysql.driver}" />
+		<property name="url" value="${jdbc.mysql.url}" />
+		<property name="username" value="${jdbc.mysql.username}" />
+		<property name="password" value="${jdbc.mysql.password}" />
+		<property name="maxActive" value="${jdbc.mysql.maxActive}" />
+		<property name="minIdle" value="${jdbc.mysql.minIdle}" />
+		<property name="initialSize" value="${jdbc.mysql.initialSize}" />
+	</bean>
+	
+	<!-- 让spring管理sqlsessionfactory 使用mybatis和spring整合包中的 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 数据库连接池 -->
+		<property name="dataSource" ref="dataSource"></property>
+		
+		<!-- 加载mybatis的全局配置文件 -->
+		<property name="configLocation" value="classpath:com/wang/config/mybatis-config.xml"></property>
+	</bean>
+	
+	<!-- SqlSessionTemplate，它是线程安全的，可以被多个 DAO 所共享使用。
+		SqlSessionTemplate 对象可以使用 SqlSessionFactory 作为构造方法的参数来创建
+		用它来管理员 sqlSession， 这样就可以在serivce中注入sqlSession-->
+	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+  		<constructor-arg index="0" ref="sqlSessionFactory" />
+  		
+  		<!-- 批量操作：
+  			for (User user : users) {
+		      sqlSession.insert("org.mybatis.spring.sample.mapper.UserMapper.insertUser", user);
+		    }
+  		 -->
+  		<constructor-arg index="1" value="BATCH" />
+	</bean>
+	
+	<!-- 事务管理器 -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+
+	<!-- 事务管理器配置扫描注解 -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+
+	<!-- 配置事物属性 ，需要事物管理器-->
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<!-- 传播行为 -->
+            <tx:method name="save*" propagation="REQUIRED" 
+            	rollback-for="java.lang.Exception" read-only="false"/>
+            <tx:method name="insert*" propagation="REQUIRED" 
+            	rollback-for="java.lang.Exception" read-only="false"/>
+            <tx:method name="add*" propagation="REQUIRED" 
+            	rollback-for="java.lang.Exception" read-only="false"/>
+            <tx:method name="create*" propagation="REQUIRED" 
+            	rollback-for="java.lang.Exception" read-only="false"/>
+            <tx:method name="delete*" propagation="REQUIRED" 
+            	rollback-for="java.lang.Exception" read-only="false"/>
+            <tx:method name="update*" propagation="REQUIRED" 
+            	rollback-for="java.lang.Exception" read-only="false"/>
+            <tx:method name="find*" propagation="SUPPORTS" read-only="true" />
+            <tx:method name="select*" propagation="SUPPORTS" read-only="true" />
+            <tx:method name="get*" propagation="SUPPORTS" read-only="true" />
+            <tx:method name="*"/> 
+		</tx:attributes>
+	</tx:advice>
+	
+	<aop:aspectj-autoproxy proxy-target-class="true"/>
+	
+	<!-- 配置事物切点，并把事物属性和切点关联起来 --> 
+	<aop:config>
+		<aop:pointcut expression="execution(* com.wang.service.*.*(..))" id="txPointcut"/>
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="txPointcut"/>
+	</aop:config>
+	
+	<!-- Mapper接口所在包名，Spring会自动查找其下的Mapper 
+		并且将会使用mapper注入映射器，这样就可以在service中直接使用mapper调用方法，避开sqlSession的使用。
+		代替手工使用SqlSessionTemplate（即sqlSession） 编写数据访问对象  -->  
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.wang.mapper" />
+	</bean>
+	
+
+</beans>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+  
+<configuration>
+
+	<settings>
+		<!-- mapUnderscoreToCamelCase: 在映射database column名字和entity属性名时，
+			自动将带下划线column名转化为常见的Java驼峰形式属性名  -->
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+        
+        <!-- lazyLoadingEnabled: 延迟加载entity的关联属性 -->
+        <setting name="lazyLoadingEnabled" value="true"/>
+        
+        <!-- 当设置为 true 的时候，懒加载的对象可能被任何懒属性全部加载。设为false时每个属性都按需加载。 -->
+        <setting name="aggressiveLazyLoading" value="false"/>
+        
+        <!-- SQL日志打印方式 -->
+        <setting name="logImpl" value="LOG4J" /> 
+    </settings>
+    
+    <typeAliases>
+    	<!-- 指定包名批量加载，会自动扫描此包下的所有类，别名就是类名（首字母大写或小写都可以） -->
+    	<package name="com.wang.controller.user"/> 
+    </typeAliases>
+
+	<!-- <environments default="development">
+		<environment id="development">
+			<transactionManager type="JDBC" />
+			<dataSource type="POOLED">
+				<property name="driver" value="com.mysql.jdbc.Driver" />
+				<property name="url" value="jdbc:mysql://localhost:3306/mybatis-test" />
+				<property name="username" value="root" />
+				<property name="password" value="root"/>
+			</dataSource>
+		</environment>
+	</environments> -->
+	
+</configuration>

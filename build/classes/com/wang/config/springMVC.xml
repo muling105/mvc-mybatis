@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.1.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+	<!-- 就是在web.xml中声明各种静态资源的支持，对静态资源文件的访问 -->
+	<mvc:default-servlet-handler/>
+	
+	<!-- 启动组件扫描，排除@Service组件，注：此处必须排除掉@Service组件   
+    	   原因：springmvc的配置文件与spring的配置文件不是同时加载，如果不进行这样的设置，  
+    	   那么，spring就会将所有带@Service注解的类都扫描到容器中，  
+    	   等到加载spring的配置文件的时候，会因为容器已经存在Service类，  
+    	   使得cglib将不对Service进行代理，直接导致的结果就是在spring配置文件中的事务配置不起作用，发生异常时，无法对数据进行回滚 -->
+	<context:component-scan base-package="com.wang">  
+    	<context:exclude-filter type="annotation"  
+            	expression="org.springframework.stereotype.Service" />  
+    </context:component-scan>
+    
+    <mvc:annotation-driven>
+		<!-- 解决乱码问题 -->
+		<mvc:message-converters register-defaults="true">
+		    <bean class="org.springframework.http.converter.StringHttpMessageConverter">
+		      <constructor-arg value="UTF-8" />
+		    </bean>
+	    </mvc:message-converters>
+	</mvc:annotation-driven>
+	
+	<!-- 不使用<mvc:annotation-driven>， 就是用如下两个注解的处理器适配器和注解的处理器映射器  -->
+	<!-- 注解的处理器适配器 -->
+	<!-- <bean class="org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping" />
+	注解的处理器适配器
+	<bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter" />  --> 
+	
+	<!-- 定义拦截器   -->
+    <mvc:interceptors>
+    	<bean class="com.wang.common.interceptor.IdentityInterceptor"></bean>
+    	<mvc:interceptor>
+    		<mvc:mapping path="/**"/>
+    		<bean class="com.wang.common.interceptor.AuthorityInterceptor"></bean>
+    	</mvc:interceptor>
+    </mvc:interceptors>
+	
+	<!-- 设置附件上传 -->
+	<bean id="multipartResolver"  class="org.springframework.web.multipart.commons.CommonsMultipartResolver"> 
+		<property name="defaultEncoding" value="UTF-8"></property>
+		<property name="maxUploadSize" value="102400000"></property> 
+	</bean>
+	
+	<!-- 定义视图解析器 --> 
+	<bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="contentType" value="text/html;charset=UTF-8" />
+		<property name="prefix" value="/default/back/"></property>
+		<property name="suffix" value=".jsp"></property>
+	</bean>
+	
+	<!-- 拦截Controller异常，并作页面的跳转 -->
+	<bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">  
+	    <!-- 指定所有没有指定的异常,都跳转到该页面 -->  
+	    <property name="defaultErrorView" value="error/error"></property>  
+	    <!-- 跳转时携带异常对象 -->  
+	    <property name="exceptionAttribute" value="error/exAtt"></property>  
+	    <!-- 定义需要特殊处理的异常，用类名或完全路径名作为key，异常也页名作为值 -->  
+	    <property name="exceptionMappings">  
+	        <props>  
+	            <prop key="IOException">error/ioexp</prop>  
+	            <prop key="java.sql.SQLException">error/sqlexp</prop>  
+	        </props>  
+	    </property>  
+	</bean> 
+	
+
+</beans>
